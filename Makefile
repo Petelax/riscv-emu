@@ -27,7 +27,7 @@ $(EMU): $(EMU_SRCS) $(EMU_HDRS)
 
 # Pattern Rules for automatic pipeline compilation
 %.o: %.s
-	$(AS) -march=rv32i -mabi=ilp32 -o $@ $<
+	$(AS) -march=rv32im -mabi=ilp32 -o $@ $<
 
 %.elf: %.o
 	$(LD) -m elf32lriscv -Ttext=0x0 -o $@ $<

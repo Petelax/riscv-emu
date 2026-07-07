@@ -92,27 +92,73 @@ int main(int argc, char *argv[]) {
                         } else if (funct7 == 0x20) {
                             debug_print("sub x%u, x%u, x%u\n", rd, rs1, rs2);
                             x[rd] = ((i32)x[rs1] - (i32)x[rs2]);
+                        } else if (funct7 == 0x01) {
+                            debug_print("mul x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = x[rs1] * x[rs2];
                         }
                         break;
                     /* xor */
                     case 0x4:
-                        debug_print("xor x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = x[rs1] ^ x[rs2];
+                        if (funct7 == 0x00) {
+                            debug_print("xor x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = x[rs1] ^ x[rs2];
+                        } else if (funct7 == 0x01) {
+                            debug_print("div x%u, x%u, x%u\n", rd, rs1, rs2);
+                            i32 dividend = (i32)x[rs1];
+                            i32 divisor = (i32)x[rs2];
+                            if (divisor == 0) {
+                                x[rd] = -1;
+                            } else if (dividend == (i32)0x80000000 && divisor == -1) {
+                                x[rd] = 0x80000000;
+                            } else {
+                                x[rd] = (u32)(dividend / divisor);
+                            }
+                        }
                         break;
                     /* or */
                     case 0x6:
-                        debug_print("or x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = x[rs1] | x[rs2];
+                        if (funct7 == 0x00) {
+                            debug_print("or x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = x[rs1] | x[rs2];
+                        } else if (funct7 == 0x01) {
+                            debug_print("rem x%u, x%u, x%u\n", rd, rs1, rs2);
+                            i32 dividend = (i32)x[rs1];
+                            i32 divisor = (i32)x[rs2];
+                            if (divisor == 0) {
+                                x[rd] = dividend;
+                            } else if (dividend == (i32)0x80000000 && divisor == -1) {
+                                x[rd] = 0;
+                            } else {
+                                x[rd] = (u32)(dividend % divisor);
+                            }
+                        }
                         break;
                     /* and */
                     case 0x7:
-                        debug_print("and x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = x[rs1] & x[rs2];
+                        if (funct7 == 0x00) {
+                            debug_print("and x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = x[rs1] & x[rs2];
+                        } else if (funct7 == 0x01) {
+                            debug_print("remu x%u, x%u, x%u\n", rd, rs1, rs2);
+                            u32 dividend = x[rs1];
+                            u32 divisor = x[rs2];
+                            if (divisor == 0) {
+                                x[rd] = dividend;
+                            } else {
+                                x[rd] = dividend % divisor;
+                            }
+                        }
+
                         break;
                     /* sll */
                     case 0x1:
-                        debug_print("sll x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = x[rs1] << x[rs2];
+                        if (funct7 == 0x00) {
+                            debug_print("sll x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = x[rs1] << x[rs2];
+                        } else if (funct7 == 0x01) {
+                            debug_print("mulh x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = (u32)(((i64)(i32)x[rs1] * (i64)(i32)x[rs2]) >> 32);
+                        }
                         break;
                     /* shift right */
                     case 0x5:
@@ -124,17 +170,36 @@ int main(int argc, char *argv[]) {
                             /* arith sra */
                             debug_print("sra x%u, x%u, x%u\n", rd, rs1, rs2);
                             x[rd] = (u32)((i32)x[rs1] >> x[rs2]);
+                        } else if (funct7 == 0x01) {
+                            debug_print("divu x%u, x%u, x%u\n", rd, rs1, rs2);
+                            u32 dividend = x[rs1];
+                            u32 divisor = x[rs2];
+                            if (divisor == 0) {
+                                x[rd] = 0xFFFFFFFF;
+                            } else {
+                                x[rd] = dividend / divisor;
+                            }
                         }
                         break;
                     /* slt */
                     case 0x2:
-                        debug_print("slt x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = ((i32)x[rs1] < (i32)x[rs2]) ? 1 : 0;
+                        if (funct7 == 0x00) {
+                            debug_print("slt x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = ((i32)x[rs1] < (i32)x[rs2]) ? 1 : 0;
+                        } else if (funct7 == 0x01) {
+                            debug_print("mulhsu x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = (u32)(((i64)(i32)x[rs1] * (i64)(u64)x[rs2]) >> 32);
+                        }
                         break;
                     /* sltu */
                     case 0x3:
-                        debug_print("sltu x%u, x%u, x%u\n", rd, rs1, rs2);
-                        x[rd] = ((u32)x[rs1] < (u32)x[rs2]) ? 1 : 0;
+                        if (funct7 == 0x00) {
+                            debug_print("sltu x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = ((u32)x[rs1] < (u32)x[rs2]) ? 1 : 0;
+                        } else if (funct7 == 0x01) {
+                            debug_print("mulhu x%u, x%u, x%u\n", rd, rs1, rs2);
+                            x[rd] = (u32)(((u64)x[rs1] * (u64)x[rs2]) >> 32);
+                        }
                         break;
                     default:
                         printf("invalid funct3 for R-type arithmetic\n");
