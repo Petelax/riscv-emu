@@ -1,0 +1,6 @@
+/riscv-emu
+
+*.bin
+*.elf
+*.o
+*.s
