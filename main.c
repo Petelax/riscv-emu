@@ -1,24 +1,7 @@
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define MEMORY_SIZE (16 * 1024 * 1024)
-typedef uint32_t u32;
-typedef uint32_t u16;
-typedef uint8_t u8;
-
-typedef int32_t i32;
-typedef int32_t i16;
-typedef int8_t i8;
-
-#define DEBUG 1
-
-#if DEBUG
-#define debug_print(...) fprintf(stderr, __VA_ARGS__)
-#else 
-#define debug_print(...)
-#endif
+#include "riscv.h"
 
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
@@ -49,10 +32,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    u8 *memory = calloc(MEMORY_SIZE, sizeof(u8));
-    assert(memory != NULL);
+    riscv_cpu_t cpu = {0};
 
-    size_t bytesRead = fread(memory, 1, MEMORY_SIZE, fp);
+    cpu.memory = calloc(MEMORY_SIZE, sizeof(u8));
+    assert(cpu.memory != NULL);
+
+    size_t bytesRead = fread(cpu.memory, 1, MEMORY_SIZE, fp);
 
     fclose(fp);
 
@@ -61,11 +46,15 @@ int main(int argc, char *argv[]) {
         goto exit_failure;
     }
 
+    syscall_t syscall_table[500] = {0};
+    init_syscall_table(syscall_table);
 
     u32 pc = 0;
-    u32 x[32] = {0};
+    u8 *memory = cpu.memory;
+    u32 *x = cpu.x;
 
     while (1) {
+        cpu.pc = pc;
         debug_print("pc: 0x%08x\n", pc);
         u32 instruction = 
             (u32)memory[pc] 
@@ -395,6 +384,13 @@ int main(int argc, char *argv[]) {
 
                 if (imm == 0x0) {
                     debug_print("ecall\n");
+                    u32 syscall_num = x[17];
+                    if (syscall_num == 93 || syscall_num == 94) {
+                        goto exit_success;
+                    }
+                    if (syscall_num < 500 && syscall_table[syscall_num] != NULL) {
+                        syscall_table[syscall_num](&cpu);
+                    }
                 } else if (imm == 0x1) {
                     debug_print("ebreak\n");
                 } else {

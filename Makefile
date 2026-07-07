@@ -6,7 +6,11 @@ LD      = riscv64-elf-ld
 OBJCOPY = riscv64-elf-objcopy
 OBJDUMP = riscv64-elf-objdump
 
-EMU     = riscv-emu
+EMU      = riscv-emu
+
+# Emulator source files and headers
+EMU_SRCS = main.c syscalls.c
+EMU_HDRS = riscv.h
 
 # Dynamically discover all assembly files and matching binaries
 SRCS    = $(wildcard *.s)
@@ -17,8 +21,9 @@ FIRST_ELF = $(firstword $(SRCS:.s=.elf))
 
 all: $(EMU) $(BINS)
 
-$(EMU): main.c
-	$(CC) $(CFLAGS) -o $@ $<
+# Compiles the emulator whenever a .c file OR the .h file changes
+$(EMU): $(EMU_SRCS) $(EMU_HDRS)
+	$(CC) $(CFLAGS) -o $@ $(EMU_SRCS)
 
 # Pattern Rules for automatic pipeline compilation
 %.o: %.s
